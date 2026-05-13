@@ -320,3 +320,253 @@ function love.update(dt)
         loseLife()
     end
 end
+
+-- Handles keyboard presses that only need to happen once.
+-- This is different from love.keyboard.isDown() because it activates
+-- only when the key is first pressed.
+function love.keypressed(key)
+
+    -- Start the game from the title screen.
+    if key == "return" and gameState == "title" then
+        restartGame()
+
+    -- Restart the game anytime by pressing R.
+    elseif key == "r" then
+        restartGame()
+
+    -- Close the game window.
+    elseif key == "escape" then
+        love.event.quit()
+    end
+end
+
+-- Converts maze grid coordinates into screen pixel coordinates.
+-- This makes it easier to place objects inside the tile map.
+local function gridToScreen(gridX, gridY)
+
+    return offsetX + (gridX - 1) * tileSize,
+           offsetY + (gridY - 1) * tileSize
+end
+
+-- Draws the title screen before the game starts.
+local function drawTitle()
+
+    love.graphics.setColor(1, 1, 1)
+
+    love.graphics.printf("MAZE RUNNER", 0, 120, 620, "center")
+
+    love.graphics.printf(
+        "Press ENTER to Start",
+        0,
+        190,
+        620,
+        "center"
+    )
+end
+
+-- Draws every tile in the maze.
+-- Walls and coins are drawn with Lua shapes.
+-- The portal uses an imported sprite image.
+local function drawMap()
+
+    for y, row in ipairs(map) do
+
+        for x, tile in ipairs(row) do
+
+            local screenX, screenY =
+                gridToScreen(x, y)
+
+            -- Draw floor background.
+            love.graphics.setColor(0.12, 0.12, 0.16)
+
+            love.graphics.rectangle(
+                "fill",
+                screenX,
+                screenY,
+                tileSize,
+                tileSize
+            )
+
+            -- Draw wall tiles.
+            if tile == "#" then
+
+                love.graphics.setColor(0.2, 0.35, 0.85)
+
+                love.graphics.rectangle(
+                    "fill",
+                    screenX,
+                    screenY,
+                    tileSize,
+                    tileSize
+                )
+
+            -- Draw collectible coin.
+            elseif tile == "." then
+
+                love.graphics.setColor(1, 0.85, 0.2)
+
+                love.graphics.circle(
+                    "fill",
+                    screenX + tileSize / 2,
+                    screenY + tileSize / 2,
+                    6
+                )
+
+            -- Draw portal sprite.
+            elseif tile == "X" then
+
+                love.graphics.setColor(1, 1, 1)
+
+                drawSprite(
+                    sprites.portal,
+                    screenX,
+                    screenY
+                )
+            end
+        end
+    end
+end
+
+-- Draw the player and enemy sprites.
+local function drawCharacters()
+
+    local playerX, playerY =
+        gridToScreen(player.gridX, player.gridY)
+
+    local enemyX, enemyY =
+        gridToScreen(enemy.gridX, enemy.gridY)
+
+    love.graphics.setColor(1, 1, 1)
+
+    -- Draw player sprite.
+    drawSprite(
+        sprites.player,
+        playerX,
+        playerY
+    )
+
+    -- Draw enemy sprite.
+    drawSprite(
+        sprites.enemy,
+        enemyX,
+        enemyY
+    )
+end
+
+-- Draw user interface information.
+local function drawUI()
+
+    love.graphics.setColor(1, 1, 1)
+
+    love.graphics.print("Score: " .. score, 64, 24)
+
+    love.graphics.print(
+        "Lives: " .. player.lives,
+        220,
+        24
+    )
+
+    love.graphics.print(
+        "Level: " .. currentLevel,
+        340,
+        24
+    )
+
+    love.graphics.print(
+        "Coins Left: " .. coinsLeft,
+        440,
+        24
+    )
+
+    love.graphics.print(
+        "R = Restart",
+        64,
+        54
+    )
+
+    love.graphics.print(
+        message,
+        64,
+        390
+    )
+end
+
+-- Main drawing function.
+-- Love2D automatically runs this every frame.
+function love.draw()
+
+    -- Set background color.
+    love.graphics.setBackgroundColor(
+        0.05,
+        0.05,
+        0.08
+    )
+
+    -- Draw different screens depending on the game state.
+    if gameState == "title" then
+
+        drawTitle()
+
+    elseif gameState == "playing" then
+
+        drawUI()
+        drawMap()
+        drawCharacters()
+
+    elseif gameState == "win" then
+
+        love.graphics.setColor(1, 1, 1)
+
+        love.graphics.printf(
+            "YOU WIN!",
+            0,
+            140,
+            620,
+            "center"
+        )
+
+        love.graphics.printf(
+            "Final Score: " .. score,
+            0,
+            190,
+            620,
+            "center"
+        )
+
+        love.graphics.printf(
+            "Press R to play again",
+            0,
+            240,
+            620,
+            "center"
+        )
+
+    elseif gameState == "gameover" then
+
+        love.graphics.setColor(1, 1, 1)
+
+        love.graphics.printf(
+            "GAME OVER",
+            0,
+            140,
+            620,
+            "center"
+        )
+
+        love.graphics.printf(
+            "Final Score: " .. score,
+            0,
+            190,
+            620,
+            "center"
+        )
+
+        love.graphics.printf(
+            "Press R to restart",
+            0,
+            240,
+            620,
+            "center"
+        )
+    end
+end
