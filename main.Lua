@@ -35,6 +35,15 @@ local offsetY = 96
 -- Walls, floors, and coins are still drawn with Love2D shapes.
 local sprites = {}
 
+-- Stores the background music.
+local music
+
+-- Stores the coin collection sound effect.
+local coinSound
+
+-- This image is displayed before the game starts.
+local titleBackground
+
 -- Game states let us switch between title, gameplay, win, and game over screens.
 local gameState = "title"
 
@@ -213,11 +222,19 @@ local function tryMovePlayer(dx, dy)
     -- Collect coins.
     if tile == "." then
 
-        score = score + 10
-        coinsLeft = coinsLeft - 1
+    -- Increase score when collecting a coin.
+    score = score + 10
 
-        setTile(player.gridX, player.gridY, " ")
-    end
+    -- Reduce remaining coin count.
+    coinsLeft = coinsLeft - 1
+
+    -- Remove the coin from the map.
+    setTile(player.gridX, player.gridY, " ")
+
+    -- Play the coin collection sound effect.
+    coinSound:stop()
+    coinSound:play()
+end
 
     -- Portal only works after collecting every coin.
     if tile == "X" then
@@ -287,6 +304,25 @@ function love.load()
     sprites.player = love.graphics.newImage("assets/player.png")
     sprites.enemy = love.graphics.newImage("assets/enemy.png")
     sprites.portal = love.graphics.newImage("assets/portal.png")
+
+    -- Load the title screen background image.
+    titleBackground = love.graphics.newImage("assets/title_background.png")
+
+    -- Load background music.
+    music = love.audio.newSource("assets/music.mp3", "stream")
+
+    -- Loop the music forever.
+    music:setLooping(true)
+
+    -- Set music volume.
+    music:setVolume(0.4)
+
+    -- Play the music.
+    music:play()
+
+        -- Load the coin sound effect.
+    -- This sound will play whenever the player collects a coin.
+    coinSound = love.audio.newSource("assets/coin.mp3", "static")
 end
 
 function love.update(dt)
@@ -361,19 +397,39 @@ local function gridToScreen(gridX, gridY)
 end
 
 -- Draws the title screen before the game starts.
+-- Draws the title/menu screen.
 local function drawTitle()
 
+    -- Draw the background image and stretch it to fit the window.
     love.graphics.setColor(1, 1, 1)
-
-    love.graphics.printf("MAZE RUNNER", 0, 120, 620, "center")
-
-    love.graphics.printf(
-        "Press ENTER to Start",
+    love.graphics.draw(
+        titleBackground,
         0,
-        190,
-        620,
-        "center"
+        0,
+        0,
+        620 / titleBackground:getWidth(),
+        440 / titleBackground:getHeight()
     )
+
+    -- Draw a dark transparent box behind the menu text.
+    love.graphics.setColor(0, 0, 0, 0.6)
+    love.graphics.rectangle("fill", 110, 95, 400, 240, 18, 18)
+
+    -- Draw the game title.
+    love.graphics.setColor(1, 0.85, 0.2)
+    love.graphics.printf("MAZE RUNNER", 0, 135, 620, "center")
+
+    -- Draw a short instruction.
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Collect the coins. Avoid the enemy.", 0, 195, 620, "center")
+
+    -- Draw start instruction.
+    love.graphics.setColor(0.4, 1, 0.6)
+    love.graphics.printf("Press ENTER to Start", 0, 260, 620, "center")
+
+    -- Draw restart/quit hint.
+    love.graphics.setColor(0.85, 0.85, 0.85)
+    love.graphics.printf("R = Restart    ESC = Quit", 0, 300, 620, "center")
 end
 
 -- Draws every tile in the maze.
